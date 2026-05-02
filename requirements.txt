@@ -1,0 +1,67 @@
+# RAY_RUNTIME_ENV_CREATE_WORKING_DIR=/media/training_data/chensheng_peng
+easydict
+typed-argument-parser
+seaborn
+kornia
+gputil
+colorama
+omegaconf
+pandas
+timm==0.9.6
+decord
+numpy==1.26.1
+# transformers==4.49.0
+torch==2.5.1
+pytz
+wandb
+imageio
+einops
+openai
+httpx==0.20.0
+opencv-python
+sentencepiece
+pyquaternion
+boto3==1.35.76
+smart_open
+# file:flash_attn-2.3.0-cp310-cp310-linux_x86_64.whl
+# ${RAY_RUNTIME_ENV_CREATE_WORKING_DIR}/apex-0.1-cp310-cp310-linux_x86_64.whl
+Panda3D
+scipy
+# flash_attn==2.7.4.post1
+jaxtyping==0.2.33
+memory_profiler== 0.61.0
+polars==1.18.0
+fancycompleter==0.9.1
+pdbpp==0.10.3
+parameterized==0.9.0
+pylance==0.36.0
+torch-fidelity==0.3.0
+roma==1.5.2.1
+rerun-sdk==0.22.1
+colorama==0.4.6
+aiofiles
+beartype==0.21.0
+jax
+aioboto3
+nuscenes-devkit
+astral
+scikit-video
+einx
+hydra-core
+ray
+tensordict
+open3d
+astropy
+skyfield
+${RAY_RUNTIME_ENV_CREATE_WORKING_DIR}/whl/transformers-4.49.0-py3-none-any.whl
+${RAY_RUNTIME_ENV_CREATE_WORKING_DIR}/whl/metadrive_simulator-0.4.3-py3-none-any.whl
+${RAY_RUNTIME_ENV_CREATE_WORKING_DIR}/whl/flash_attn-2.7.1.post4+cu12torch2.5cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
+# ${RAY_RUNTIME_ENV_CREATE_WORKING_DIR}/whl/applied_data-0.0.2-py3-none-any.whl
+
+# --extra-index-url https://neuron:sVUzaCednqx4czMKTbQfVJqLZBRABCDj@ursa.pypi.applied.dev/simple
+# ursa-py==1.59.3+master.2710.g24ccad14782
+
+protobuf==6.32.0
+
+--extra-index-url https://neuron:sVUzaCednqx4czMKTbQfVJqLZBRABCDj@ursa.pypi.applied.dev/simple 
+ursa-py==1.65.0+master.1772.g21d3b589da5
