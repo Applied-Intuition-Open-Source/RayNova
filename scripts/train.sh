@@ -58,4 +58,5 @@ train_raynova.py \
 --lbs=1 \
 --workers=1 \
 --save_model_ep_freq=1 \
---auto_resume=1 
+--auto_resume=1 \
+--pn='0.06M'
