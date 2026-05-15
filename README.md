@@ -1,4 +1,4 @@
-# RayNova: Scalable World Model for Autonomous Driving
+# [CVPR 2026] RayNova: Scale-Temporal Autoregressive World Modeling in Ray Space
 
 **[Project Page](https://raynova-ai.github.io/) | [Paper](https://arxiv.org/abs/2602.20685)**
 
@@ -130,46 +130,7 @@ Training on a single GPU with the mini dataset is primarily intended for verifyi
 ```bash
 # Full inference with data loaded from ScenarioNet format
 jupyter notebook tools/interactive_infer.ipynb
-
-# Pre-processed demo sample (no dataset required)
-jupyter notebook for_demo/interactive_infer_demo.ipynb
 ```
-
-The demo notebook (`for_demo/interactive_infer_demo.ipynb`) loads a pre-processed sample from `for_demo/demo_sample/` and generates a multi-camera video. The sample format is:
-
-```
-demo_sample/
-└── frame_{t}/
-    ├── item_dict.pkl          # metadata + bboxes + map + camera params
-    └── frame_images_v{v}.png  # camera image for view v
-```
-
-`item_dict.pkl` contains:
-
-```python
-{
-  'img_metas': {
-    'curr_to_first_lidar_rt': Tensor[4,4],   # current → first-frame LiDAR transform
-    'curr_to_prev_lidar_rt':  Tensor[4,4],   # current → previous-frame LiDAR transform
-    'location': str,                          # map location
-    'timeofday': str,                         # HH:MM
-    'description': str,                       # text description of the scene
-  },
-  'gt_bboxes_3d':       Tensor[N,7],   # LiDAR-frame boxes (x,y,z,l,w,h,yaw)
-  'gt_labels_3d':       Tensor[N],     # class indices
-  'map_sampled_points': Tensor[M,P,3], # M map elements, P sampled points each
-  'map_type_labels':    Tensor[M],     # map element type indices
-  'camera_params':      tuple,         # (rot, trans, intrins, post_rot, post_trans)
-}
-```
-
----
-
-## Roadmap
-
-- [ ] Release RayNova pretrained model (public-data-only)
-- [ ] Release full mini dataset on Hugging Face
-- [ ] Inference server / Gradio demo
 
 ---
 
@@ -178,12 +139,11 @@ demo_sample/
 If you find this work useful, please cite:
 
 ```bibtex
-@article{raynova2025,
-  title   = {RayNova: Scalable World Model for Autonomous Driving},
-  author  = {},
-  journal = {},
-  year    = {2025},
-  url     = {https://raynova-ai.github.io/}
+@article{xie2026raynova,
+  title={RAYNOVA: Scale-Temporal Autoregressive World Modeling in Ray Space},
+  author={Xie, Yichen and Peng, Chensheng and Abdelfattah, Mazen and Hu, Yihan and Yang, Jiezhi and Higgins, Eric and Brigden, Ryan and Tomizuka, Masayoshi and Zhan, Wei},
+  journal={arXiv preprint arXiv:2602.20685},
+  year={2026}
 }
 ```
 
