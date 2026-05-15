@@ -1,17 +1,20 @@
 # RayNova: Scalable World Model for Autonomous Driving
 
-**[Project Page](https://raynova-ai.github.io/) | [Paper](#) | [Demo](#)**
+**[Project Page](https://raynova-ai.github.io/) | [Paper](https://arxiv.org/abs/2602.20685)**
 
-RayNova is a scalable autoregressive world model for autonomous driving. It generates temporally consistent, multi-camera video sequences conditioned on text descriptions, 3D object bounding boxes, and HD map elements. RayNova extends [Infinity](https://github.com/FoundationVision/Infinity) — a bitwise autoregressive image generation framework — to the multi-view, multi-frame driving setting.
+World foundation models aim to simulate the evolution of the real world with physically plausible behavior. Unlike prior methods that handle spatial and temporal correlations separately, we propose RAYNOVA, a geometry-agonistic multiview world model for driving scenarios that employs a dual-causal autoregressive framework. It follows both scale-wise and temporal topological orders in the autoregressive process, and leverages global attention for unified 4D spatio-temporal reasoning. Different from existing works that impose strong 3D geometric priors, RAYNOVA constructs an isotropic spatio-temporal representation across views, frames, and scales based on relative Plücker-ray positional encoding, enabling robust generalization to diverse camera setups and ego motions. We further introduce a recurrent training paradigm to alleviate distribution drift in long-horizon video generation.
 
 ---
 
 ## Highlights
 
-- **Multi-view generation**: 8 synchronized camera views (NuPlan layout: front, left ×3, right ×3, back)
-- **Rich conditioning**: text description, 3D bounding boxes, HD map polylines/polygons
-- **Scalable backbone**: 2B-parameter Infinity transformer with temporal and view attention
-- **Compatible with ScenarioNet**: data pipeline shares the [ScenarioNet](https://github.com/metadriverse/scenarionet) format for easy integration
+- **Versatile World Foundation Model.**: Supporting diverse input and output formats for various conditional generation use cases with a single model.
+- **Scalable Data-Driven Framework.**: Ingesting heterogeneous training data from diverse sources with different sensor configurations.
+- **Extendable Position Embedding.**: Our relative ray-level positional encoding supports extrapolation beyond the training range
+- **Efficient Video Generation.**: Rapid progression from coarse abstractions to fine-grained details
+
+<img width="1398" height="1392" alt="image" src="https://github.com/user-attachments/assets/af2c698a-bfb8-48c3-9054-6223e60e4a2f" />
+
 
 ---
 
