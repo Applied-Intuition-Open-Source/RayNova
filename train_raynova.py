@@ -50,7 +50,8 @@ from infinity.utils.s3_file_utils import load_bytes_file, download_s3_folder, sa
 from nuscenes_tools.nuscenes_utils.collate import collate as collate_nuscenes
 
 from scenarionet_tools.collate import collate as collate_nuplan
-from scenarionet_tools.nuplan_data_wrapper import build_nuplan_dataset, build_nuscenes_dataset, convert_bbox
+from scenarionet_tools.scenarionet_data_wrapper import convert_bbox
+from scenarionet_tools.scenarionet_data_wrapper import build_scenarionet_dataset
 from scenarionet_tools.map_utils import convert_points
 from scenarionet_tools.mixed_dataloader import ProbabilisticDataLoader
 from nuscenes_tools.nuscenes_utils.box3d_instance import LiDARInstance3DBoxes
@@ -154,33 +155,17 @@ def build_everything_from_args(args: arg_util.Args, saver):
         misc.check_randomness(args)
 
     # build data
-    if args.dataset_name == 'nuscenes':
-        iters_train, iters_val, ld_train, ld_val = build_nuscenes_dataloaders(args)
-    elif args.dataset_name == 'nuplan':
-        iters_train, iters_val, ld_train, ld_val = build_nuplan_dataloaders(args)
-    elif args.dataset_name == 'mixed':
-        # assert args.random_drop_view == 1
-        iters_train, iters_val, ld_train, ld_val = build_mixed_dataloaders(args)
+    iters_train, iters_val, ld_train, ld_val = build_nuplan_dataloaders(args)
     # train_h_div_w_list = list(ld_train.dataset.h_div_w_template2generator.keys())
     # print(f"{train_h_div_w_list=}")
     args.train_h_div_w_list = None
 
     # load VAE
     print(f'Load vae from {args.vae_ckpt}')
-    if not args.train_on_cluster:
-        if not os.path.exists(args.vae_ckpt):
-            vae_ckpt = {}
-        else:
-            vae_ckpt = torch.load(args.vae_ckpt, map_location='cpu')
+    if not os.path.exists(args.vae_ckpt):
+        vae_ckpt = {}
     else:
-        # download from s3 to local
-        local_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'weights')
-        local_vae_path = download_s3_file(args.vae_ckpt, local_folder)
-        # if dist.is_local_master():
-        #     local_vae_path = download_s3_file(args.vae_ckpt, local_folder)
-        torch.cuda.synchronize()
-        dist.barrier()
-        vae_ckpt = torch.load(local_vae_path, map_location='cpu')
+        vae_ckpt = torch.load(args.vae_ckpt, map_location='cpu')
 
     # build models. Note that here gpt is the causal VAR transformer which performs next scale prediciton with text guidance
     text_tokenizer, text_encoder, vae_local, gpt_uncompiled, gpt_wo_ddp, gpt_ddp, gpt_wo_ddp_ema, gpt_ddp_ema, gpt_optim = build_model_optimizer(args, vae_ckpt)
@@ -213,9 +198,8 @@ def build_everything_from_args(args: arg_util.Args, saver):
     if trainer_state is not None and len(trainer_state):
         trainer.load_state_dict(trainer_state, strict=False, skip_vae=True) # don't load vae again
 
-    if not args.train_on_cluster:
-        if (start_it != 0) and (start_it % iters_train == 0):
-            start_ep += 1
+    if (start_it != 0) and (start_it % iters_train == 0):
+        start_ep += 1
     start_it = start_it % iters_train
     print(f"{start_it=}, {iters_train=}")
     
@@ -237,16 +221,8 @@ def build_model_optimizer(args, vae_ckpt):
     from infinity.utils.load import build_vae_raynova
     
     if args.online_t5:
-        if not args.train_on_cluster:
-            print(f'Loading T5 from {args.t5_path}...', flush=True)
-            local_t5_path = args.t5_path
-        else:
-            local_t5_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'weights', "flan-t5-xl")
-            print(f"Downloading from {args.t5_path} to {local_t5_path}", flush=True)
-            if dist.is_local_master():
-                download_s3_folder(args.t5_path, local_t5_path)
-            torch.cuda.synchronize()
-            dist.barrier()
+        print(f'Loading T5 from {args.t5_path}...', flush=True)
+        local_t5_path = args.t5_path
         text_tokenizer: T5TokenizerFast = AutoTokenizer.from_pretrained(local_t5_path, revision=None, legacy=True)
         text_tokenizer.model_max_length = args.tlen
         text_encoder: T5EncoderModel = T5EncoderModel.from_pretrained(local_t5_path, torch_dtype=torch.float16)
@@ -448,37 +424,11 @@ def build_model_optimizer(args, vae_ckpt):
     return text_tokenizer, text_encoder, vae_local, gpt_uncompiled, gpt_wo_ddp, gpt_ddp, gpt_wo_ddp_ema, gpt_ddp_ema, gpt_optim
 
 
-def build_nuscenes_dataloaders(args: arg_util.Args, source_id=None):
-    rank = dist.get_rank()
-    world_size = dist.get_world_size()
-    if args.task_type == 't2i':
-        dataset_train = build_nuscenes_dataset(args, rank, world_size, source_id)
-    else:
-        raise NotImplementedError(f'args.task_type={args.task_type} not supported')
-    vbs = round(args.batch_size)
-    print(f"{args.batch_size=}, {vbs=}", flush=True)
-
-    ld_train = DataLoader(dataset=dataset_train, batch_size=args.batch_size, num_workers=args.workers, pin_memory=False, generator=args.get_different_generator_for_each_rank(), 
-                          collate_fn=partial(collate_nuplan, samples_per_gpu=args.batch_size), worker_init_fn=worker_init_fn, drop_last=True,
-                          multiprocessing_context="spawn")
-    iters_train = 700 // (args.batch_size * dist.get_world_size())
-    if args.recurrent_training:
-        iters_train = iters_train // (args.timesteps // args.time_chunk * 2)
-    ld_val = None
-    iters_val = 0
-    print('training:')
-    print(f'[dataloader] gbs={args.glb_batch_size}, lbs={args.batch_size}, iters_train={iters_train}')
-
-    print('validation: None')
-    ld_train = iter(ld_train)
-    del dataset_train
-    return iters_train, iters_val, ld_train, ld_val
-
 def build_nuplan_dataloaders(args: arg_util.Args, source_id=None):
     rank = dist.get_rank()
     world_size = dist.get_world_size()
     if args.task_type == 't2i':
-        dataset_train = build_nuplan_dataset(args, rank, world_size, source_id)
+        dataset_train = build_scenarionet_dataset(args, rank, world_size, source_id, dataset_name='nuplan')
     else:
         raise NotImplementedError(f'args.task_type={args.task_type} not supported')
     vbs = round(args.batch_size)
@@ -501,18 +451,6 @@ def build_nuplan_dataloaders(args: arg_util.Args, source_id=None):
     ld_train = iter(ld_train)
     del dataset_train
     return iters_train, iters_val, ld_train, ld_val
-
-def build_mixed_dataloaders(args: arg_util.Args):
-    nuscenes_iters_train, nuscenes_iters_val, nuscenes_ld_train, nuscenes_ld_val = build_nuscenes_dataloaders(args, 0)
-    nuplan_iters_train, nuplan_iters_val, nuplan_ld_train, nuplan_ld_val = build_nuplan_dataloaders(args, 1)
-
-    mixed_ld_train = ProbabilisticDataLoader(nuscenes_ld_train, nuplan_ld_train, prob1=args.nuscenes_ratio)
-    mixed_ld_val = None
-    mixed_iters_val = 0
-    mixed_iters_train = nuscenes_iters_train + nuplan_iters_train
-    
-    return mixed_iters_train, mixed_iters_val, mixed_ld_train, mixed_ld_val
-
 
 
 def main_train(config=None, experiment_tracker=None):
@@ -575,18 +513,8 @@ def main_train(config=None, experiment_tracker=None):
         if args.resume_wandb_name is not None:
             wandb_name = args.resume_wandb_name
             wandb.init(entity="research-interns",project="Infinity_stream", name=wandb_name, id=wandb_name, resume="must", reinit=True)
-        elif not args.train_on_cluster:
-            # wandb_utils.wandb.init(project=args.project_name, name=args.exp_name, config={})
-            wandb_utils.initialize(args)
         else:
-            config_dict = args.state_dict(key_ordered=False)
-            config_save_path = os.path.join(args.local_out_path, "config.yaml")
-            with open(config_save_path, "w") as f:
-                yaml.dump(config_dict, f)
-            wandb_utils.log_config(config_save_path)
-            wandb_name = wandb_utils.get_wandb_name()
-            config_save_path = f"{args.model_save_path}/{wandb_name}/config.yaml"
-            save_yaml_to_s3(config_dict, config_save_path)
+            wandb_utils.initialize(args)
 
 
     for ep in range(start_ep, args.ep):
@@ -660,7 +588,7 @@ def main_train(config=None, experiment_tracker=None):
                 'pe': PARA_EMB, 'paln': PARA_ALN, 'pot': PARA_OT, 'pall': PARA_ALL,
             }
         else: law_stats = None
-        if dist.is_master() and law_stats is not None and not args.train_on_cluster:
+        if dist.is_master() and law_stats is not None:
             stat_file = os.path.join(args.bed, 'law.stat')
             if os.path.exists(stat_file):
                 with open(stat_file, 'r', encoding='utf-8') as law_fp: tag_to_epv = json.load(law_fp)
@@ -1148,23 +1076,9 @@ def train_one_ep(
         # cleaning garbage every epoch
         gc.collect(), torch.cuda.empty_cache()
         # save local model every epoch
-        if (ep + 1)% args.save_s3_model_freq == 0:
-            state_dict_to_save = saver.get_state_dict_to_save(args, g_it, ep, it+1, trainer)
-            if args.train_on_cluster:
-                wandb_name = wandb_utils.get_wandb_name()
-                save_path = f"{args.model_save_path}/{wandb_name}/ar-gpt_model_latest.pth"
-                try:
-                    if dist.is_master():
-                        print(f"Saving model to S3: {save_path}")
-                        save_state_dict_to_s3(state_dict_to_save, save_path)
-                except Exception as e:
-                    print(f"Error saving model to S3: {e}")
-                    pass
         if (ep + 1) == args.ep or (ep + 1) % args.save_model_ep_freq == 0:
             with misc.Low_GPU_usage(files=[args.log_txt_path], sleep_secs=3, verbose=True):
                 local_ckpt_path = saver.sav(args=args, g_it=(g_it+1), next_ep=ep, next_it=it+1, trainer=trainer, acc_str=f'[todo]', eval_milestone=None, also_save_to=None, best_save_to=None)
-            if args.train_on_cluster:
-                wandb_utils.log_checkpoint(local_ckpt_path, "latest")
     me.synchronize_between_processes()
     return {k: meter.global_avg for k, meter in me.meters.items()}, me.iter_time.time_preds(max_it - (g_it + 1) + (args.ep - ep) * 15), g_it  # +15: other cost
 

@@ -82,11 +82,6 @@ class CKPTSaver(object):
         # NOTE: all rank should call this state_dict(), not master only!
         trainer_state = trainer.state_dict()
 
-        # if args.train_on_cluster:
-        #     keys_to_save=['gpt_fsdp']
-        #     # only save the key_to_save
-        #     trainer_state = {k: v for k, v in trainer_state.items() if k in keys_to_save}
-
         if self.is_master:
             stt = time.time()
             torch.save({
@@ -117,7 +112,7 @@ class CKPTSaver(object):
                     basename = os.path.basename(filename)
                     target_filename = f'{args.bed}/{basename}'
                     # for cluster training, save it to s3 
-                    if not args.bed.startswith("s3://") and not args.train_on_cluster:
+                    if not args.bed.startswith("s3://"):
                         if basename.endswith('.pth'):
                             if not os.path.isfile(target_filename):
                                 auto_sync(filename, target_filename)

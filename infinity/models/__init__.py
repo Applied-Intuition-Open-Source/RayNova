@@ -18,6 +18,8 @@ for clz in (torch.nn.CrossEntropyLoss, SoftTargetCrossEntropy):  # no longer __r
 
 DropPath.__repr__ = lambda self: f'{type(self).__name__}(...)'
 
+from infinity.models.infinity import Infinity
+
 alias_dict = {}
 for d in range(6, 40+2, 2):
     alias_dict[f'd{d}'] = f'infinity_d{d}'

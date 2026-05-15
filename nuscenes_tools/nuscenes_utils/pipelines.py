@@ -65,6 +65,7 @@ def read_image(filename, cam_data):
     # cv2.imwrite('/home/applied/yichen_xie/src/Infinity/debug/img.png', img)
     # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     # img = Image.fromarray(img)
+    
     img = Image.open(load_bytes_file(filename), mode='r')
     img_size = img.size
 
