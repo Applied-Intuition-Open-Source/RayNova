@@ -66,6 +66,9 @@ cd ..
 ```
 
 > **RayNova pretrained checkpoint** (trained on public NuPlan and NuScenes data): *coming soon.*
+> 
+>s3://research-datasets-chicago/users/yichen_xie/ckpts/infinity/Infinity-3ot255_7747edd2bbb_02000000_0/
+> 
 > We are releasing a model trained exclusively on publicly available data. Performance may be slightly lower than our internal model trained on the full dataset.
 
 ---
