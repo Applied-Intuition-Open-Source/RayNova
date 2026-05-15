@@ -114,12 +114,22 @@ Camera names: `CAM_F0` (front), `CAM_L0/L1/L2` (left), `CAM_R0/R1/R2` (right), `
 
 ## Training
 
-
+**Stage 1:** Training the model to generate low resolution (192x336) videos:
 ```bash
 bash scripts/train.sh
 ```
 
-Training on a single GPU with the mini dataset is primarily intended for verifying the pipeline. For full-scale training, set `--data_path` to your full ScenarioNet NuPlan dataset.
+**Stage 2:** Training the model to generate high resolution (384x672) videos:
+```bash
+bash scripts/train.sh
+```
+
+**Stage 3:** Recurrent training for long-horizonal generation:
+```bash
+bash scripts/train.sh
+```
+
+**Training on a single GPU with the mini dataset is primarily intended for verifying the pipeline. For full-scale training, set `--data_path` to your own full dataset.**
 
 ---
 
