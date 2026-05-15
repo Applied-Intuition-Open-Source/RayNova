@@ -74,18 +74,19 @@ cd ..
 
 ### Mini Dataset (for demo & training tutorial)
 
-We provide a small sample dataset (`nuplan_sample/`) to demonstrate the training and inference pipeline without requiring access to proprietary data.
+We provide a small sample dataset (`nuplan_sample/`) to demonstrate the training and inference pipeline without requiring access to proprietary data. 
 
+The file structure of sample dataset is shown as follows:
 ```
 nuplan_sample/
-└── sample_10/                     # 10 NuPlan scenarios
+└── sample_4/                     # 10 NuPlan scenarios
     ├── dataset_mapping.pkl        # {filename: subdir_name}
     ├── dataset_summary.pkl        # {filename: metadata_dict}
-    ├── sample_10_0/
+    ├── sample_4_0/
     │   ├── dataset_mapping.pkl
     │   ├── dataset_summary.pkl
     │   └── <scenario_id>.pkl      # pickled ScenarioDescription dict
-    ├── sample_10_1/
+    ├── sample_4_1/
     └── ...
     └── sensor_blobs/                  # camera images, organised by log/camera/
         └── <log_name>/
@@ -112,6 +113,7 @@ Camera names: `CAM_F0` (front), `CAM_L0/L1/L2` (left), `CAM_R0/R1/R2` (right), `
 ---
 
 ## Training
+
 
 ```bash
 bash scripts/train.sh
