@@ -16,30 +16,19 @@ import infinity.utils.dist as dist
 
 
 class Args(Tap):
-    train_on_cluster: bool = True      # if trained on cluster, no need to initiaize the ddp
-    dataset_name: str = 'mixed'  # nuscenes or nuplan or mixed
     local_out_path: str = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'local_output')  # directory for save checkpoints
 
-    if dataset_name == "nuplan":
-        data_path : str = 's3://research-datasets/unified_datasets/scenarionet_lite_nuplan_full_2025_04_29_lang_desc'
-        save_s3_model_freq: int = 1
-    elif dataset_name == "nuscenes":
-        data_path : str = 's3://research-datasets/unified_datasets/scenarionet_lite_nuscenes_infinity/train'
-        save_s3_model_freq: int = 5
-    elif dataset_name == "mixed":
-        data_path : str = 's3://research-datasets/unified_datasets/scenarionet_lite_nuscenes_infinity/train+s3://research-datasets/unified_datasets/scenarionet_lite_nuplan_full_2025_04_29_lang_desc'
-        save_s3_model_freq: int = 1
-    else:
-        raise ValueError(f"Invalid dataset name: {dataset_name}")
+    data_path: str = '/media/training_data/yichen_xie/nuplan_sample/sample_10'
     
+    images_dir: str = ''  # base dir for local camera images (cam_abs_path resolved relative to this when not absolute/S3)
     video_data_path: str = ''
     bed: str = '' # os.path.join(os.path.dirname(os.path.dirname(__file__)), 'checkpoints')                       # bed directory for copy checkpoints apart from local_out_path
-    vae_ckpt: str = 's3://research-datasets/users/chensheng_peng/ckpts/infinity/weights/infinity_vae_d16.pth'                  # VAE ckpt
+    vae_ckpt: str = 'weights/infinity_vae_d32reg.pth'
     exp_name: str = 'Infinity'                  # experiment name
     ds: str = 'oi'                      # only used in GPT training::load_viz_data & FID benchmark
-    model: str = 'layer12c4'                     # for VAE training, 'b' or any other for GPT training
+    model: str = '2bc8'
     short_cap_prob: float = 0.5         # prob for training with short captions
-    project_name: str = 'Infinity_mixed'      # name of wandb project
+    project_name: str = 'Infinity_stream_2b'
     tf32: bool = True                   # whether to use TensorFloat32
     auto_resume: bool = False            # whether to automatically resume from the last checkpoint found in args.bed
     rush_resume: str = '' # 's3://research-datasets/users/chensheng_peng/ckpts/infinity/Infinity-scale-spatial-temporal-box/ar-ckpt-last_0019.pth' # 's3://research-datasets/users/chensheng_peng/ckpts/infinity/multi_view_mutli_time_v6t4_motionray/ar-ckpt-last_0059.pth'               # pretrained infinity checkpoint
@@ -57,16 +46,9 @@ class Args(Tap):
     seed: int = None                    # 3407
     rand: bool = True                   # actual seed = seed + (dist.get_rank()*512 if rand else 0)
     device: str = 'cpu'
-    task_id: str = '2493513'
-    trial_id: str = '7260554'
-    robust_run_id: str = '00'
-    ckpt_trials = []
-    real_trial_id: str = '7260552'
-    chunk_nodes: int = None
-    is_master_node: bool = None
     # dir
     log_txt_path: str = ''
-    t5_path: str = 's3://research-datasets/users/chensheng_peng/ckpts/infinity/weights/flan-t5-xl'                   # if not specified: automatically find from all bytenas
+    t5_path: str = 'weights/flan-t5-xl'
     online_t5: bool = True              # whether to use online t5 or load local features
     # GPT
     sdpa_mem: bool = True               # whether to use with torch.backends.cuda.sdp_kernel(enable_flash=False, enable_math=False, enable_mem_efficient=True)
@@ -101,11 +83,11 @@ class Args(Tap):
     fuse: bool = False                  # whether to use fused mlp
     fused_norm: bool = False            # whether to use fused norm
     xen: bool = False                   # whether to use xentropy
-    use_flex_attn: bool = False         # whether to use flex_attn to speedup training
+    use_flex_attn: int = 1              # whether to use flex_attn to speedup training
     stable: bool = False
-    gblr: float = 5e-5
+    gblr: float = 2e-4
     dblr: float = None                  # =gblr if is None
-    tblr: float = 5e-5
+    tblr: float = 2e-4
     glr: float = None
     dlr: float = None
     tlr: float = None                   # vqgan: 4e-5
@@ -118,8 +100,8 @@ class Args(Tap):
     ls: float = 0.0                     # label smooth
     lz: float = 0.0                     # z loss from PaLM = 1e-4   todo
     eq: int = 0                         # equalized loss
-    ep: int = 50
-    wp: float = 0.00000001
+    ep: int = 200
+    wp: float = 1.0
     wp0: float = 0.005
     wpe: float = 1                    # 0.001, final cosine lr = wpe * peak lr
     sche: str = 'lin0'                      # cos, exp, lin
@@ -140,7 +122,7 @@ class Args(Tap):
     resos: tuple = None                 # [automatically set; don't specify this]
     data_load_reso: int = None          # [automatically set; don't specify this]
     workers: int = 2                    # num workers; 0: auto, -1: don't use multiprocessing in DataLoader
-    lbs: int = 8                       # local batch size; if lbs != 0, bs will be ignored, and will be reset as round(args.lbs / args.ac) * dist.get_world_size()
+    lbs: int = 2                       # local batch size; if lbs != 0, bs will be ignored, and will be reset as round(args.lbs / args.ac) * dist.get_world_size()
     bs: int = 0                         # global batch size; if lbs != 0, bs will be ignored
     batch_size: int = 0                 # [automatically set; don't specify this] batch size per GPU = round(args.bs / args.ac / dist.get_world_size())
     glb_batch_size: int = 0             # [automatically set; don't specify this] global batch size = args.batch_size * dist.get_world_size()
@@ -156,9 +138,9 @@ class Args(Tap):
     use_streaming_dataset: int = 1      # use streaming dataset
     iterable_data_buffersize: int = 30000 # streaming dataset buffer size
     save_model_iters_freq: int = 100   # save model iter freq, deprecated
-    save_model_ep_freq: int = 25
+    save_model_ep_freq: int = 10
     noise_apply_layers: int = 13        # Bitwise Self-Correction: apply noise to layers, -1 means not apply noise
-    noise_apply_strength: float = 0.3    # Bitwise Self-Correction: apply noise strength, -1 means not apply noise
+    noise_apply_strength: float = 0.5    # Bitwise Self-Correction: apply noise strength, -1 means not apply noise
     noise_apply_requant: int = 1        # Bitwise Self-Correction: requant after apply noise
     rope2d_each_sa_layer: int = 1       # apply rope2d to each self-attention layer
     rope2d_normalized_by_hw: int = 2    # apply normalized rope2d
@@ -166,7 +148,7 @@ class Args(Tap):
     add_lvl_embeding_only_first_block: int = 1 # apply lvl pe embedding only first block or each block
     reweight_loss_by_scale: int = 1     # reweight loss by scale
     always_training_scales: int = 100   # trunc training scales
-    vae_type: int = 16                   # here 16/32/64 is bsq vae of different quant bits
+    vae_type: int = 32                   # here 16/32/64 is bsq vae of different quant bits
     fake_vae_input: bool = False        # fake vae input for debug
     model_init_device: str = 'cuda'     # model_init_device
     prefetch_factor: int = 16            # prefetch_factor for dataset
@@ -174,17 +156,16 @@ class Args(Tap):
     debug_bsc: int = 0                  # save figs and set breakpoint for debug bsc and check input
     task_type: str = 't2i'              # take type to t2i or t2v
     
-    num_views: int = 8 if dataset_name == "nuplan" else 6                 # number of views, 6 for nuscenes, 8 for nuplan
+    num_views: int = 8                 # number of views (nuplan: 8 cameras)
     timesteps: int = 4                  # number of temporal steps
-    view_embed_type: str = 'ray'     # the type of view embeddings: ["full_length", 'ray', 'none']
-    attn_bias_type: str = 'full'        # the type of multiview attention mask ['separate', 'full']
-    pretrained_ckpt: str = 's3://research-datasets/users/chensheng_peng/ckpts/infinity/weights/infinity_125M_256x256.pth'         # The path to pretrained VAR ckpt if doing finetuning
-    add_view_embeding_only_first_block: int = 0 # apply view position embedding only first block or each block
-    time_embed_type: str = 'fourier' # ['fourier' or 'none']
-    add_time_embeding_only_first_block: int = 0 # apply time embedding only first block or each block
-    model_save_path: str = 's3://research-datasets/users/chensheng_peng/ckpts/infinity'
+    view_embed_type: str = 'local_plucker_ray_prope_6D_scale'
+    attn_bias_type: str = 'temporal_scale'
+    pretrained_ckpt: str = 'weights/infinity_2b_reg.pth'
+    add_view_embeding_only_first_block: int = 1
+    time_embed_type: str = 'none'
+    add_time_embeding_only_first_block: int = 1 # apply time embedding only first block or each block
 
-    sample_interval: int = 10  # for nuplan (10Hz) only. The interval for sampling temporal frames (default value 5: 2 Hz)
+    sample_interval: int = 5  # for nuplan (10Hz) only. The interval for sampling temporal frames
     random_sample_interval: int = 1  # for nuplan (10Hz) only whether to use random sample interval for each frame (min: 0, max: sample_interval)
     
     object_condition: int = 1  # Generation conditioned on object bounding boxes 
@@ -192,29 +173,29 @@ class Args(Tap):
     bbox_img_coord: int = 1  # Whether to include 2D image coordinate for each corner
 
     random_drop_view: int = 1 # Whether to randomly drop views
-    random_remove_casuality: float = 0.15 # the probability to shuffle the input sequences
+    random_remove_casuality: float = 0 # the probability to shuffle the input sequences
 
     use_spatial_condition: int = 1   # Whether to use multiview spatial condition
     use_temporal_condition: int = 1   # Whether to use multiframe temporal condition
 
-    use_frame_coordinate: int = 0  # Whether to use per-frame coordinate system (default: 0)
+    use_frame_coordinate: int = 1  # Whether to use per-frame coordinate system
 
     recurrent_training: int = 0 # Whether to use recurrent training
-    time_chunk: int = 1 # The time chunk for recurrent training
-    
+    time_chunk: int = 4 # The time chunk for recurrent training
+
     use_gt_input: int = 1 # Whether to use gt idx for each scale input
     freeze_backbone: int = 0 # Whether to freeze the Infinity backbone
-    condition_rope: int = 0 # Whether to use RoPE in object condition
+    condition_rope: int = 1 # Whether to use RoPE in object condition
     
     map_condition: int = 1 # Whether to use map condition
     map_condition_drop_rate: float = 0.25 # The probability to drop map condition
-    map_sample_points_num: int = 30 # The number of points to sample from the each map element
+    map_sample_points_num: int = 20 # The number of points to sample from the each map element
 
-    nuscenes_ratio: float = 0.1 # The ratio of nuscenes data in the training set
-    nuplan_ratio: float = 0.3 # The ratio of nuplan data in the training set
+    nuscenes_ratio: float = 0.3 # The ratio of nuscenes data in the training set
+    nuplan_ratio: float = 0.7 # The ratio of nuplan data in the training set
 
     use_local_attn: int = 1 # Whether to use local attention module
-    adaptive_horizon: int = 0 # Whether to use adaptive sequence length (timesteps * numviews)
+    adaptive_horizon: int = 1 # Whether to use adaptive sequence length (timesteps * numviews)
     max_horizon: int = 16 # The maximum horizon for adaptive horizon
 
     resume_wandb_name : str = None
@@ -343,7 +324,6 @@ class Args(Tap):
         if not dist.is_local_master():
             return
         nd = {'is_master': dist.is_visualizer()}
-        r_trial, trial = str(self.real_trial_id), str(self.trial_id)
         for k, v in {
             'name': self.exp_name, 'tag': self.tag, 'cmd': self.cmd, 'commit': self.commit_id, 'branch': self.branch,
             'Lnll': self.last_Lnll, 'L1': self.last_L1,
@@ -351,7 +331,7 @@ class Args(Tap):
             'acc': self.acc_all, 'acc_r': self.acc_real, 'acc_f': self.acc_fake,
             'weiG': self.last_wei_g if (self.last_wei_g is None or math.isfinite(self.last_wei_g)) else -23333,
             'grad': self.grad_boom,
-            
+
             'cur': self.cur_phase, 'cur_ep': self.cur_ep, 'cur_it': self.cur_it,
             'rema': self.remain_time, 'fini': self.finish_time, 'last_upd': time.strftime("%Y-%m-%d %H:%M", time.localtime()),
             'bsep': f'{self.glb_batch_size}/{self.ep}',
@@ -360,13 +340,10 @@ class Args(Tap):
             'T_lrwd': f'{self.tlr:.1e}'.replace('.0', '').replace('-0', '-').replace('+0', '+') + f'/{self.twd:g}',
             'diff': self.diff, 'diffs': self.diffs, 'diffs_ema': self.diffs_ema if self.diffs_ema else None,
             'opt': self.opt,
-            'is_master_node': self.is_master_node,
         }.items():
             if hasattr(v, 'item'):v = v.item()
             if v is None or (isinstance(v, str) and len(v) == 0): continue
             nd[k] = v
-        if r_trial == trial:
-            nd.pop('trial', None)
         
         with open(self.log_txt_path, 'w') as fp:
             json.dump(nd, fp, indent=2)
@@ -414,117 +391,10 @@ class Args(Tap):
         return f'{{\n{s}\n}}\n'
 
 
-class Args_stream_2b(Args):
-   
-   
-    # override the default values in Args
-    
-    lbs : int = 2
-    dataset_name: str = 'mixed'
-    project_name: str = 'Infinity_stream_2b' 
-    # data_path: str = 's3://research-datasets/unified_datasets/scenarionet_lite_nuplan_full_2025_04_29_lang_desc'
-    data_path: str = 's3://research-datasets/unified_datasets/scenarionet_lite_nuscenes_infinity/train+s3://research-datasets/unified_datasets/scenarionet_lite_nuplan_full_2025_04_29_lang_desc'
-    model_save_path: str = 's3://research-datasets/users/yichen_xie/ckpts/infinity'
-    
-    vae_ckpt : str = 's3://research-datasets/users/chensheng_peng/ckpts/infinity/weights/infinity_vae_d32reg.pth'
-    vae_type: int = 32
-    pretrained_ckpt : str = 's3://research-datasets/users/chensheng_peng/ckpts/infinity/weights/infinity_2b_reg.pth'
-    model : str = '2bc8'
-    
-    # resume_path: str = 's3://research-datasets/users/yichen_xie/ckpts/infinity/Infinity-hxpj25_7747edd2bbb_0/ar-gpt_model_latest.pth'
-    # resume_wandb_name: str = resume_path.split('/')[-2] if resume_path is not None else None
-    # rush_resume: str = 's3://research-datasets/users/yichen_xie/ckpts/infinity/Infinity-hxpj25_7747edd2bbb_0/ar-gpt_model_latest.pth'
-    
-    save_s3_model_freq: int = 1
-    ep: int = 200
-    save_model_ep_freq: int = 10
-    object_condition: int = 1
-    timesteps: int = 4
-    num_views: int = 8
-    add_view_embeding_only_first_block: int = 0
-    view_embed_type: str = 'local_plucker_ray_prope_6D'
-    time_embed_type: str = 'none'
-    bbox_img_coord: int = 1
-    use_spatial_condition: int = 1
-    use_frame_coordinate: int = 1
-    
-    rope2d_each_sa_layer: int = 1
-    sample_interval: int = 10
-    random_sample_interval: int = 1
-    random_remove_casuality: int = 0
-    random_drop_view: int = 1
-    use_temporal_condition: int = 1
-    time_chunk: int = 4
-    
-    freeze_backbone: int = 0
-    use_gt_input: int = 1
-    condition_rope: int = 1
-
-    attn_bias_type: str = 'temporal_scale' 
-    
-    map_condition: int = 1 # Whether to use map condition
-    map_condition_drop_rate: float = 0.25 # The probability to drop map condition
-    map_sample_points_num: int = 30 # The number of points to sample from the each map element
-
-
-
-class Args_stream_plucker_mixed_2b(Args_stream_2b):
-    # data_path: str = 's3://research-datasets-chicago/unified_datasets/scenarionet_lite_nuscenes_map_infinity/train+s3://research-datasets-chicago/unified_datasets/scenarionet_lite_nuplan_full_2025_04_29_lang_desc'
-    # data_path: str = 's3://research-datasets/unified_datasets/scenarionet_lite_nuscenes_map_infinity/train+s3://research-datasets/unified_datasets/scenarionet_lite_nuplan_full_2025_04_29_lang_desc+s3://onroad-perception-datasets/exported_datasets/e2e/sandbox/samser/with_source_uuid_changes/execution_00'
-    data_path: str = 's3://research-datasets-chicago/unified_datasets/scenarionet_lite_nuscenes_map_infinity/train+s3://research-datasets-chicago/unified_datasets/scenarionet_lite_nuplan_full_2025_04_29_lang_desc'
-    model_save_path: str = 's3://research-datasets-chicago/users/yichen_xie/ckpts/infinity'
-    
-    view_embed_type = 'local_plucker_ray_prope_6D_scale'
-    add_view_embeding_only_first_block = 1
-    attn_bias_type = 'temporal_scale'
-    noise_apply_strength = 0.5
-    dataset_name: str = 'mixed'
-
-    gblr: float = 2e-4
-    tblr: float = 2e-4
-    wp: float = 1.0
-    workers: int = 2
-    lbs: int = 2
-    sample_interval = 5
-    
-    nuscenes_ratio: float = 0.3
-    nuplan_ratio: float = 0.7
-    random_drop_view = 1
-    
-    map_sample_points_num: int = 20
-    freeze_backbone = 0
-
-    adaptive_horizon = 1
-    max_horizon = 16
-    use_flex_attn = 1
-
-
-
-class Args_stream_plucker_mixed_2b_384(Args_stream_plucker_mixed_2b):
-    gblr: float = 2e-4
-    tblr: float = 2e-4
-    
-    attn_bias_type = 'temporal_scale'
-    noise_apply_strength = 0.5
-    random_drop_view = 1
-
-    pn = '0.25M'
-    lbs = 1
-    num_views = 4 
-    sample_interval = 5
-    workers = 2
-    
-    wp: float = 1.0
-
-    # rush_resume : str = 's3://research-datasets-chicago/users/yichen_xie/ckpts/infinity/Infinity-gzh1kb_01bb24c56e7_02000000_0/slim-gpt_model_latest.pth'
-    rush_resume: str = 's3://research-datasets-chicago/users/yichen_xie/ckpts/infinity/Infinity-ygll6a_7747edd2bbb_02000000_0/slim-gpt_model_latest.pth'
-
-    map_sample_points_num = 20
-    use_flex_attn = 1
-    adaptive_horizon = 1
-    max_horizon = 16    
-    
-    freeze_backbone = 0
+class Args_384(Args):
+    pn: str = '0.25M'
+    lbs: int = 1
+    num_views: int = 4
 
 
 def init_dist_and_get_args():
@@ -532,10 +402,9 @@ def init_dist_and_get_args():
         if sys.argv[i].startswith('--local-rank=') or sys.argv[i].startswith('--local_rank='):
             del sys.argv[i]
             break
-    args = Args_stream_plucker_mixed_2b(explicit_bool=True).parse_args(known_only=True)
-    args.chunk_nodes = int(os.environ.get('CK', '') or '0')
-    
-    if len(args.extra_args) > 0 and args.is_master_node == 0:
+    args = Args(explicit_bool=True).parse_args(known_only=True)
+
+    if len(args.extra_args) > 0:
         print(f'======================================================================================')
         print(f'=========================== WARNING: UNEXPECTED EXTRA ARGS ===========================\n{args.extra_args}')
         print(f'=========================== WARNING: UNEXPECTED EXTRA ARGS ===========================')
@@ -553,7 +422,7 @@ def init_dist_and_get_args():
     
     day3 = 60*24*3
 
-    dist.init_distributed_mode(local_out_path=args.local_out_path, fork=False, timeout_minutes=day3 if int(os.environ.get('LONG_DBG', '0') or '0') > 0 else 30, train_on_cluster=args.train_on_cluster)
+    dist.init_distributed_mode(local_out_path=args.local_out_path, fork=False, timeout_minutes=day3 if int(os.environ.get('LONG_DBG', '0') or '0') > 0 else 30, train_on_cluster=False)
     
     args.tlen = max(args.tlen, args.nodata_tlen)
     if args.zero and args.tema != 0:
@@ -622,19 +491,8 @@ def init_dist_and_get_args():
             args.model_alias = args.model
             args.model = f'infinity_{args.model}'
     
-    args.task_id = '123'
-    args.trial_id = '123'
-    args.robust_run_id = '0'
     args.log_txt_path = os.path.join(args.local_out_path, 'log.txt')
-    
-    ls = '[]'
-    if 'AUTO_RESUME' in os.environ:
-        ls.append(int(os.environ['AUTO_RESUME']))
-    ls = sorted(ls, reverse=True)
-    ls = [str(i) for i in ls]
-    args.ckpt_trials = ls
-    args.real_trial_id = args.trial_id if len(ls) == 0 else str(ls[-1])
-    
+
     args.enable_checkpointing = None if args.enable_checkpointing in [False, 0, "0"] else args.enable_checkpointing
     args.enable_checkpointing = "full-block" if args.enable_checkpointing in [True, 1, "1"] else args.enable_checkpointing
     assert args.enable_checkpointing in [None, "full-block", "full-attn", "self-attn"], \
@@ -648,7 +506,7 @@ def init_dist_and_get_args():
     else:
         args.tag = 'UK'
     
-    if dist.is_master() and not args.train_on_cluster:
+    if dist.is_master():
         os.system(f'rm -rf {os.path.join(args.bed, "ready-node*")} {os.path.join(args.local_out_path, "ready-node*")}')
     
     if args.sdpa_mem:
@@ -657,20 +515,10 @@ def init_dist_and_get_args():
         enable_mem_efficient_sdp(True)
         enable_math_sdp(False)
     
-    if args.dataset_name == 'nuplan':
-        args.class_names = ['vehicle', 'cyclist', 'traffic_cone', 'pedestrian', 'traffic_barrier']
-    elif args.dataset_name == 'nuscenes':
-        args.class_names = [
-            'car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'traffic_barrier',
-            'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone', 'vehicle', 'cyclist'
-        ]
-    elif args.dataset_name == 'mixed':
-        args.class_names = [
-            'car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'traffic_barrier',
-            'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone', 'vehicle', 'cyclist'
-        ]
-    else:
-        raise NotImplementedError
+    args.class_names = [
+        'car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'traffic_barrier',
+        'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone', 'vehicle', 'cyclist'
+    ]
     
     if args.map_names is None:
         args.map_names = ['road_line_solid_single_white', 'road_line_broken_single_white', 'lane_surface_street', 'road_edge_sidewalk', 'road_edge_boundary', 'lane_surface_unstructure', 'crosswalk', 'road_line_solid_single_yellow']
