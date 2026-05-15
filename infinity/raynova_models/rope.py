@@ -214,19 +214,10 @@ def apply_rotary_emb_with_camera(q, k, scale_schedule, rope2d_freqs_grid, pad_to
 
 def apply_rotary_emb_with_camera_ray6D(q, k, view_meta_data=None):
     
-    if 'scale' in view_meta_data['view_embed_type']:
-        freq_base = 100.0
-        time_scale = 30
-        ray_scale = 50
-        camera_center_scale = 2
-    else:
-        freq_base = 10000.0
-        time_scale = 10
-        ray_scale = 50
-        if 'prel' in view_meta_data['view_embed_type']:
-            camera_center_scale = 20
-        else:
-            camera_center_scale = 10    
+    freq_base = 100.0
+    time_scale = 30
+    ray_scale = 50
+    camera_center_scale = 2
     
     qk = torch.stack((q, k), dim=0)  #(2, batch_size, heads, seq_len, head_dim)
     device_type = qk.device.type

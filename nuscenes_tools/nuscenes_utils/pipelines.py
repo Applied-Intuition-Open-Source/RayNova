@@ -14,8 +14,6 @@ from .data_container import DataContainer
 # for training on clusters, we need to change the loading pipeline
 import sys
 sys.path.append("../..")
-from infinity.utils.s3_file_utils import load_bytes_file
-
 
 def to_tensor(data) -> torch.Tensor:
     """Convert objects of various python types to :obj:`torch.Tensor`.
@@ -58,15 +56,8 @@ def assert_tensor_type(func):
     return wrapper
 
 
-def read_image(filename, cam_data):
-    # img_bytes = load_bytes_file(filename).getvalue()
-    # np_array = np.frombuffer(img_bytes, np.uint8)
-    # img = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
-    # cv2.imwrite('/home/applied/yichen_xie/src/Infinity/debug/img.png', img)
-    # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    # img = Image.fromarray(img)
-    
-    img = Image.open(load_bytes_file(filename), mode='r')
+def read_image(filename, cam_data):    
+    img = Image.open(filename, mode='r')
     img_size = img.size
 
     if 'distortion' in cam_data:
@@ -546,7 +537,6 @@ class LoadMultiViewImageFromFiles_BEVDet(object):
             else:
                 raise ValueError(f"Invalid cam_data: {cam_data}")
 
-            # img = Image.open(load_bytes_file(filename), mode='r')
             post_rot = torch.eye(2)
             post_tran = torch.zeros(2)
 
@@ -578,7 +568,6 @@ class LoadMultiViewImageFromFiles_BEVDet(object):
                 assert 'adjacent' in results
                 if not type(results['adjacent']) is list:
                     filename_adjacent = results['adjacent']['cams'][cam]['data_path']
-                    # img_adjacent = Image.open(load_bytes_file(filename_adjacent), mode='r')
                     img_adjacent = read_image(filename_adjacent, results['adjacent']['cams'][cam])
                     img_adjacent = self.img_transform_core(img_adjacent,
                                                            resize_dims=resize_dims,
@@ -589,7 +578,6 @@ class LoadMultiViewImageFromFiles_BEVDet(object):
                 else:
                     for id in range(len(results['adjacent'])):
                         filename_adjacent = results['adjacent'][id]['cams'][cam]['data_path']
-                        # img_adjacent = Image.open(load_bytes_file(filename_adjacent), mode='r')
                         img_adjacent = read_image(filename_adjacent, results['adjacent']['cams'][cam])
                         img_adjacent = self.img_transform_core(img_adjacent,
                                                                resize_dims=resize_dims,

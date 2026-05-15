@@ -42,25 +42,6 @@ MAP_PALETTE_VIS = {
     "road_line_solid_single_yellow": (255, 0, 0), # yellow
 }
 
-# MAP_PALETTE = {
-#     "road_line_solid_single_white": (255, 0, 0), # red
-#     "road_line_broken_single_white": (255, 165, 0), # orange
-#     "lane_surface_street": (255, 255, 209), # light yellow
-#     "road_edge_sidewalk": (0, 0, 255), # blue
-#     "road_edge_boundary": (135, 206, 255), # skyblue
-#     "lane_surface_unstructure": (191, 62, 255), # purple
-#     "crosswalk": (0, 255, 0), # green
-#     "road_line_solid_single_yellow": (255, 255, 0), # yellow
-# }
-
-# OBJECT_PALETTE = {
-#     "VEHICLE": (255, 158, 0),
-#     "CYCLIST": (220, 20, 60),
-#     "TRAFFIC_CONE": (47, 79, 79),
-#     "PEDESTRIAN": (0, 0, 230),
-#     "TRAFFIC_BARRIER": (112, 128, 144),
-# }
-
 
 def rotation_3d_in_axis(points, angles, axis=0):
     """Rotate points by angles according to axis.
@@ -297,75 +278,3 @@ def draw_map_points_on_imgs(data, ori_imgs, classes, transparent_bg=False) -> Tu
             out_imgs[i].putalpha(Image.fromarray(
                 (np.any(np.asarray(out_imgs[i]) > 0, axis=2) * 255).astype(np.uint8)))
     return out_imgs
-
-
-# def box_center_shift(bboxes: LiDARInstance3DBoxes, new_center):
-#     raw_data = bboxes.tensor.numpy()
-#     new_bboxes = LiDARInstance3DBoxes(
-#         raw_data, box_dim=raw_data.shape[-1], origin=new_center)
-#     return new_bboxes
-
-
-# def trans_boxes_to_views(bboxes, transforms, aug_matrixes=None, proj=True):
-#     """This is a wrapper to perform projection on different `transforms`.
-
-#     Args:
-#         bboxes (LiDARInstance3DBoxes): bboxes
-#         transforms (List[np.arrray]): each is 4x4.
-#         aug_matrixes (List[np.array], optional): each is 4x4. Defaults to None.
-
-#     Returns:
-#         List[np.array]: each is Nx8x3, where z always equals to 1 or -1
-#     """
-#     if len(bboxes) == 0:
-#         return None
-
-#     coords = []
-#     for idx in range(len(transforms)):
-#         if aug_matrixes is not None:
-#             aug_matrix = aug_matrixes[idx]
-#         else:
-#             aug_matrix = None
-#         coords.append(
-#             trans_boxes_to_view(bboxes, transforms[idx], aug_matrix, proj))
-#     return coords
-
-
-# def trans_boxes_to_view(bboxes, transform, aug_matrix=None, proj=True):
-#     """2d projection with given transformation.
-
-#     Args:
-#         bboxes (LiDARInstance3DBoxes): bboxes
-#         transform (np.array): 4x4 matrix
-#         aug_matrix (np.array, optional): 4x4 matrix. Defaults to None.
-
-#     Returns:
-#         np.array: (N, 8, 3) normlized, where z = 1 or -1
-#     """
-#     if len(bboxes) == 0:
-#         return None
-
-#     bboxes_trans = box_center_shift(bboxes, (0.5, 0.5, 0.5))
-#     trans = transform
-#     if aug_matrix is not None:
-#         aug = aug_matrix
-#         trans = aug @ trans
-#     corners = bboxes_trans.corners
-#     num_bboxes = corners.shape[0]
-
-#     coords = np.concatenate(
-#         [corners.reshape(-1, 3), np.ones((num_bboxes * 8, 1))], axis=-1
-#     )
-#     trans = copy.deepcopy(trans).reshape(4, 4)
-#     coords = coords @ trans.T
-
-#     coords = coords.reshape(-1, 4)
-#     # we do not filter > 0, need to keep sign of z
-#     if proj:
-#         z = np.clip(coords[:, 2], a_min=1e-5, a_max=1e5)
-#         coords[:, 0] /= z
-#         coords[:, 1] /= z
-#         coords[:, 2] /= np.abs(coords[:, 2])
-
-#     coords = coords[..., :3].reshape(-1, 8, 3)
-#     return coords

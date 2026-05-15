@@ -45,15 +45,11 @@ class Args(Tap):
     checkpoint_type: str = 'torch'      # checkpoint_type: torch, onmistore
     seed: int = None                    # 3407
     rand: bool = True                   # actual seed = seed + (dist.get_rank()*512 if rand else 0)
-    device: str = 'cpu'
-    # dir
-    log_txt_path: str = ''
     t5_path: str = 'weights/flan-t5-xl'
     online_t5: bool = True              # whether to use online t5 or load local features
     # GPT
     sdpa_mem: bool = True               # whether to use with torch.backends.cuda.sdp_kernel(enable_flash=False, enable_math=False, enable_mem_efficient=True)
     tfast: int = 0                      # compile GPT
-    model_alias: str = 'b'              # [automatically set; don't specify this]
     rms: bool = False
     aln: float = 1e-3                   # multiplier of ada_lin.w's initialization
     alng: float = 5e-06                    # multiplier of ada_lin.w[gamma channels]'s initialization, -1: the same as aln
@@ -117,17 +113,10 @@ class Args(Tap):
     afuse: bool = True                  # fused adam
     # data
     pn: str = '0.06M'                        # pixel nums, choose from 0.06M, 0.25M, 1M
-    scale_schedule: tuple = None        # [automatically set; don't specify this] = tuple(map(int, args.pn.replace('-', '_').split('_')))
-    patch_size: int = None              # [automatically set; don't specify this] = 2 ** (len(args.scale_schedule) - 1)
-    resos: tuple = None                 # [automatically set; don't specify this]
-    data_load_reso: int = None          # [automatically set; don't specify this]
     workers: int = 2                    # num workers; 0: auto, -1: don't use multiprocessing in DataLoader
     lbs: int = 2                       # local batch size; if lbs != 0, bs will be ignored, and will be reset as round(args.lbs / args.ac) * dist.get_world_size()
     bs: int = 0                         # global batch size; if lbs != 0, bs will be ignored
-    batch_size: int = 0                 # [automatically set; don't specify this] batch size per GPU = round(args.bs / args.ac / dist.get_world_size())
-    glb_batch_size: int = 0             # [automatically set; don't specify this] global batch size = args.batch_size * dist.get_world_size()
     ac: int = 1                         # gradient accumulation
-    r_accu: float = 1.0                 # [automatically set; don't specify this] = 1 / args.ac
     norm_eps: float = 1e-6              # norm eps for infinity
     tlen: int = 512                     # truncate text embedding to this length
     Ct5: int = 2048                     # feature dimension of text encoder
@@ -158,7 +147,7 @@ class Args(Tap):
     
     num_views: int = 8                 # number of views (nuplan: 8 cameras)
     timesteps: int = 4                  # number of temporal steps
-    view_embed_type: str = 'local_plucker_ray_prope_6D_scale'
+    view_embed_type: str = 'local_plucker_ray_prope_6D'
     attn_bias_type: str = 'temporal_scale'
     pretrained_ckpt: str = 'weights/infinity_2b_reg.pth'
     add_view_embeding_only_first_block: int = 1
@@ -200,13 +189,22 @@ class Args(Tap):
 
     resume_wandb_name : str = None
 
-    ############################  Attention! The following arguments and configurations are set automatically, you can skip reading the following part ###############################
-    ############################  Attention! The following arguments and configurations are set automatically, you can skip reading the following part ###############################
-    ############################  Attention! The following arguments and configurations are set automatically, you can skip reading the following part ###############################
+    # ─────────────────────────────────────────────────────────────────────────────
+    # The fields below are set automatically at runtime. Do not pass them as CLI args.
+    # ─────────────────────────────────────────────────────────────────────────────
 
+    device: str = 'cpu'                 # set to cuda:N by dist.get_device()
+    log_txt_path: str = ''              # set from bed path
+    model_alias: str = 'b'
+    scale_schedule: tuple = None        # derived from pn
+    patch_size: int = None              # derived from scale_schedule
+    resos: tuple = None
+    data_load_reso: int = None
+    batch_size: int = 0                 # per-GPU batch size = round(lbs / ac)
+    glb_batch_size: int = 0             # global batch size = batch_size * world_size
+    r_accu: float = 1.0                 # = 1 / ac
 
-    # would be automatically set in runtime
-    branch: str = subprocess.check_output(f'git symbolic-ref --short HEAD 2>/dev/null || git rev-parse HEAD', shell=True).decode('utf-8').strip() or '[unknown]' # [automatically set; don't specify this]
+    branch: str = subprocess.check_output(f'git symbolic-ref --short HEAD 2>/dev/null || git rev-parse HEAD', shell=True).decode('utf-8').strip() or '[unknown]'
     commit_id: str = '' # subprocess.check_output(f'git rev-parse HEAD', shell=True).decode('utf-8').strip() or '[unknown]'  # [automatically set; don't specify this]
     commit_msg: str = ''# (subprocess.check_output(f'git log -1', shell=True).decode('utf-8').strip().splitlines() or ['[unknown]'])[-1].strip()    # [automatically set; don't specify this]
     cmd: str = ' '.join(a.replace('--exp_name=', '').replace('--exp_name ', '') for a in sys.argv[7:])  # [automatically set; don't specify this]
@@ -414,9 +412,8 @@ def init_dist_and_get_args():
     if args.dbg:
         torch.autograd.set_detect_anomaly(True)
     
-    if not args.bed.startswith("s3://"):
-        try: os.makedirs(args.bed, exist_ok=True)
-        except: pass
+    try: os.makedirs(args.bed, exist_ok=True)
+    except: pass
     try: os.makedirs(args.local_out_path, exist_ok=True)
     except: pass
     
