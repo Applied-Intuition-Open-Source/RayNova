@@ -18,8 +18,6 @@ from timm.models import register_model
 from torch.utils.checkpoint import checkpoint
 from PIL import Image
 import numpy as np
-import kornia
-import pickle
 import matplotlib.pyplot as plt
 
 import infinity.utils.dist as dist
@@ -35,7 +33,6 @@ from infinity.models.embedder import get_embedder
 from infinity.raynova_models.box_embedder import ContinuousBBoxWithTextEmbedding
 from infinity.raynova_models.map_embedder import MapWithTextEmbedding
 from infinity.utils.misc import get_scene_description, project_corners_to_views, remove_cache
-from infinity.utils.s3_file_utils import load_bytes_file, download_s3_folder
 from infinity.models.infinity import MultiInpIdentity, TextAttentivePool
 
 try:

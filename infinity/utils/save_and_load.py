@@ -12,7 +12,6 @@ import glob
 import shutil
 from infinity.utils import arg_util
 import infinity.utils.dist as dist
-from infinity.utils.s3_file_utils import load_bytes_file
 
 def glob_with_epoch_iter(pattern, recursive=False): 
     def extract_ep_iter(filename):
@@ -112,12 +111,11 @@ class CKPTSaver(object):
                     basename = os.path.basename(filename)
                     target_filename = f'{args.bed}/{basename}'
                     # for cluster training, save it to s3 
-                    if not args.bed.startswith("s3://"):
-                        if basename.endswith('.pth'):
-                            if not os.path.isfile(target_filename):
-                                auto_sync(filename, target_filename)
-                        else:
-                            auto_sync(filename, target_filename)     
+                    if basename.endswith('.pth'):
+                        if not os.path.isfile(target_filename):
+                            auto_sync(filename, target_filename)
+                    else:
+                        auto_sync(filename, target_filename)
 
             cost = time.time() - stt
             print(f'[CKPTSaver][rank00] cost: {cost:.2f}s', flush=True)
@@ -156,7 +154,7 @@ def auto_resume(args: arg_util.Args, pattern='ckpt*.pth') -> Tuple[List[str], in
     print(f'auto resume from {resume}')
 
     try:
-        ckpt = torch.load(load_bytes_file(resume), map_location='cpu')
+        ckpt = torch.load(resume, map_location='cpu')
     except Exception as e:
         info.append(f'[auto_resume] failed, {e} @ {resume}')
         if len(all_ckpt) < 2:

@@ -46,14 +46,11 @@ from infinity.utils.misc import get_scene_description, project_corners_to_views
 from infinity.utils.data_sampler import InfiniteGroupEachSampleInBatchSampler, FiniteGroupEachSampleInBatchSampler
 from infinity.models.ema import get_ema_model
 
-from infinity.utils.s3_file_utils import load_bytes_file, download_s3_folder, save_state_dict_to_s3, save_yaml_to_s3, download_s3_file
-from nuscenes_tools.nuscenes_utils.collate import collate as collate_nuscenes
 
 from scenarionet_tools.collate import collate as collate_nuplan
 from scenarionet_tools.scenarionet_data_wrapper import convert_bbox
 from scenarionet_tools.scenarionet_data_wrapper import build_scenarionet_dataset
 from scenarionet_tools.map_utils import convert_points
-from scenarionet_tools.mixed_dataloader import ProbabilisticDataLoader
 from nuscenes_tools.nuscenes_utils.box3d_instance import LiDARInstance3DBoxes
 
 # import resource
@@ -256,7 +253,7 @@ def build_model_optimizer(args, vae_ckpt):
             
     if args.pretrained_ckpt is not None and (args.resume_path is None or args.resume_path==''):
         print(f"{args.pretrained_ckpt=}", flush=True)
-        ckpt_state_dict = torch.load(load_bytes_file(args.pretrained_ckpt), map_location='cpu')
+        ckpt_state_dict = torch.load(args.pretrained_ckpt, map_location='cpu')
         ckpt_state_dict['pos_1LsC_start'] = ckpt_state_dict['pos_start']
         del ckpt_state_dict['pos_start']
 
@@ -270,7 +267,7 @@ def build_model_optimizer(args, vae_ckpt):
     
     if args.rush_resume:
         print(f"{args.rush_resume=}", flush=True)
-        cpu_d = torch.load(load_bytes_file(args.rush_resume), 'cpu')
+        cpu_d = torch.load(args.rush_resume, map_location='cpu')
         if 'trainer' in cpu_d:
             state_dict = cpu_d['trainer']['gpt_fsdp']
             # del state_dict['time_embed'] # only when increasing the timesteps
