@@ -29,10 +29,19 @@ pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 \
 pip install -r requirements.txt
 ```
 
-Install MetaDrive (required for ScenarioNet data loading):
+Install [ScenarioNet](https://github.com/metadriverse/scenarionet) (required for data conversion):
 ```bash
+# Install MetaDrive Simulator
+cd ~/  # Go to the folder you want to host these two repos.
 git clone https://github.com/metadriverse/metadrive.git
-cd metadrive && pip install -e . && cd ..
+cd metadrive
+pip install -e.
+
+# Install ScenarioNet
+cd ~/  # Go to the folder you want to host these two repos.
+git clone https://github.com/metadriverse/scenarionet.git
+cd scenarionet
+pip install -e .
 ```
 
 ---
@@ -56,7 +65,7 @@ git clone https://huggingface.co/google/flan-t5-xl
 cd ..
 ```
 
-> **RayNova pretrained checkpoint** (trained on public NuPlan data): *coming soon.*
+> **RayNova pretrained checkpoint** (trained on public NuPlan and NuScenes data): *coming soon.*
 > We are releasing a model trained exclusively on publicly available data. Performance may be slightly lower than our internal model trained on the full dataset.
 
 ---
@@ -78,10 +87,10 @@ nuplan_sample/
     │   └── <scenario_id>.pkl      # pickled ScenarioDescription dict
     ├── sample_10_1/
     └── ...
-└── sensor_blobs/                  # camera images, organised by log/camera/
-    └── <log_name>/
-        └── <camera>/
-            └── <timestamp>.jpg
+    └── sensor_blobs/                  # camera images, organised by log/camera/
+        └── <log_name>/
+            └── <camera>/
+                └── <timestamp>.jpg
 ```
 
 **Data format.** Each scenario `.pkl` file follows the [ScenarioNet](https://github.com/metadriverse/scenarionet) `ScenarioDescription` format. The fields used by RayNova are:
@@ -100,14 +109,6 @@ nuplan_sample/
 
 Camera names: `CAM_F0` (front), `CAM_L0/L1/L2` (left), `CAM_R0/R1/R2` (right), `CAM_B0` (back).
 
-**Downloading your own data.** To download scenarios from the full NuPlan dataset in this format, use the provided script:
-
-```bash
-python scenarionet_tools/download_nuplan_from_s3.py \
-    --local_dir nuplan_sample/sample_10 \
-    --num_scenarios 10
-```
-
 ---
 
 ## Training
@@ -115,16 +116,6 @@ python scenarionet_tools/download_nuplan_from_s3.py \
 ```bash
 bash scripts/train.sh
 ```
-
-Key arguments in `train.sh` (override defaults from `infinity/utils/arg_util.py`):
-
-| Argument | Default | Description |
-|----------|---------|-------------|
-| `--data_path` | `nuplan_sample/sample_10` | Path to ScenarioNet dataset |
-| `--lbs` | `1` | Local batch size per GPU |
-| `--tblr` | `1e-4` | Transformer learning rate |
-| `--freeze_backbone` | `1` | Freeze Infinity backbone, train only new modules |
-| `--save_model_ep_freq` | `1` | Save checkpoint every N epochs |
 
 Training on a single GPU with the mini dataset is primarily intended for verifying the pipeline. For full-scale training, set `--data_path` to your full ScenarioNet NuPlan dataset.
 
