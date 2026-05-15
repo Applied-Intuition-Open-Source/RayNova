@@ -114,18 +114,29 @@ Camera names: `CAM_F0` (front), `CAM_L0/L1/L2` (left), `CAM_R0/R1/R2` (right), `
 
 ## Training
 
+You can train our model on the mini dataset with the following script:
+
+```bash
+bash scripts/train.sh
+```
+
+Our default training pipeline includes three stages:
+
 **Stage 1:** Training the model to generate low resolution (192x336) videos:
 ```bash
+# set --pn to '0.06M'
 bash scripts/train.sh
 ```
 
 **Stage 2:** Training the model to generate high resolution (384x672) videos:
 ```bash
+# set "--pn" to '0.25M', "--rush_resume" to the checkpoint of Stage 1
 bash scripts/train.sh
 ```
 
 **Stage 3:** Recurrent training for long-horizonal generation:
 ```bash
+# set --pn to '0.25M', "--tblr" to 1/10 of Stage 2, "--rush_resume" to the checkpoint of Stage 2
 bash scripts/train.sh
 ```
 
@@ -135,7 +146,7 @@ bash scripts/train.sh
 
 ## Inference
 
-### Interactive notebook
+We show the inference prcoess with interactive notebook:
 
 ```bash
 # Full inference with data loaded from ScenarioNet format
