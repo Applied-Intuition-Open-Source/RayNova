@@ -110,8 +110,6 @@ You can follow the instructions in [ScenarioNet](https://github.com/metadriverse
 | `metadata['log_name']` | `str` | Log identifier (used to derive timestamp / location) |
 | `language_description` | `list[dict]` | Per-frame text descriptions (optional) |
 
-Camera names: `CAM_F0` (front), `CAM_L0/L1/L2` (left), `CAM_R0/R1/R2` (right), `CAM_B0` (back).
-
 To align heterogeneous data sources, we adopt a unified coordinate system:
 
 1. Ego coordinate: x-axis forward, y-axis left-ward, z-axis upward
