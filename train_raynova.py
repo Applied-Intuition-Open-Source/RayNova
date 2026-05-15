@@ -9,13 +9,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'third_party/core_sta
 import gc
 import json
 import math
-# os.environ['AWS_ACCESS_KEY_ID'] = 'cd0146b0fd5c24625a928b242d19f7e0dec18424'
-# os.environ['AWS_SECRET_ACCESS_KEY'] = 'HN7mDT0pooo+3E40lyab8rrNfIied/33pCbpyrSEDuA='
-# os.environ['URSA_SDK_GRPC_HOSTNAME'] = 'grpc.neuron.oci.applied.dev'
-# os.environ['AWS_DEFAULT_REGION'] = 'us-phoenix-1'
-# os.environ['AWS_ENDPOINT_URL'] = 'https://idskhu5vqvtl.compat.objectstorage.us-phoenix-1.oraclecloud.com'
-# os.environ['AWS_DEFAULT_REGION'] = 'us-chicago-1'
-# os.environ['AWS_ENDPOINT_URL'] = 'https://idskhu5vqvtl.compat.objectstorage.us-chicago-1.oraclecloud.com'
 
 import random
 import time
