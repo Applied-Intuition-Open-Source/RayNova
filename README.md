@@ -94,7 +94,9 @@ nuplan_sample/
                 └── <timestamp>.jpg
 ```
 
-**Data format.** Each scenario `.pkl` file follows the [ScenarioNet](https://github.com/metadriverse/scenarionet) `ScenarioDescription` format. The fields used by RayNova are:
+**Data format.** Each scenario `.pkl` file follows the [ScenarioNet](https://github.com/metadriverse/scenarionet) `ScenarioDescription` format. 
+
+You can follow the instructions in [ScenarioNet](https://github.com/metadriverse/scenarionet) to convert nuPlan and other datasets (like nuScenes or WOD) to the desired formats. The fields used by RayNova are:
 
 | Field | Shape / Type | Description |
 |-------|-------------|-------------|
@@ -109,6 +111,11 @@ nuplan_sample/
 | `language_description` | `list[dict]` | Per-frame text descriptions (optional) |
 
 Camera names: `CAM_F0` (front), `CAM_L0/L1/L2` (left), `CAM_R0/R1/R2` (right), `CAM_B0` (back).
+
+To align heterogeneous data sources, we adopt a unified coordinate system:
+
+1. Ego coordinate: x-axis forward, y-axis left-ward, z-axis upward
+2. Camera coordinate: x-axis rightward, y-axis downward, z-axis forward
 
 ---
 
