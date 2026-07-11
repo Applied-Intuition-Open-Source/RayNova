@@ -62,12 +62,13 @@ wget https://huggingface.co/FoundationVision/Infinity/resolve/main/infinity_2b_r
 # Text encoder (Flan-T5-XL)
 git clone https://huggingface.co/google/flan-t5-xl
 
+# RayNova checkpoint (2B, trained on public nuPlan + nuScenes)
+huggingface-cli download AppliedIntuitionResearch/RayNova --local-dir raynova
+
 cd ..
 ```
 
-> **RayNova pretrained checkpoint** (trained on public NuPlan and NuScenes data): *coming soon.*
-> 
->s3://research-datasets-chicago/users/yichen_xie/ckpts/infinity/Infinity-3ot255_7747edd2bbb_02000000_0/
+> **RayNova pretrained checkpoint** (trained on public NuPlan and NuScenes data): [🤗 AppliedIntuitionResearch/RayNova](https://huggingface.co/AppliedIntuitionResearch/RayNova)
 > 
 > We are releasing a model trained exclusively on publicly available data. Performance may be slightly lower than our internal model trained on the full dataset.
 
