@@ -27,6 +27,10 @@ conda activate raynova
 pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 \
     --index-url https://download.pytorch.org/whl/cu124
 pip install -r requirements.txt
+
+# FlashAttention (needs torch installed first; prebuilt wheels available at
+# https://github.com/Dao-AILab/flash-attention/releases for common torch/CUDA/python combos)
+pip install flash-attn==2.7.1.post4 --no-build-isolation
 ```
 
 Install [ScenarioNet](https://github.com/metadriverse/scenarionet) (required for data conversion):

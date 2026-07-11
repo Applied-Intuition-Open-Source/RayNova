@@ -18,5 +18,4 @@ scipy
 nuscenes-devkit
 transformers==4.49.0
 metadrive_simulator==0.4.3
-flash_attn==2.7.1
 protobuf==6.32.0
