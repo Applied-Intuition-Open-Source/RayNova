@@ -1,6 +1,16 @@
-# [CVPR 2026] RayNova: Scale-Temporal Autoregressive World Modeling in Ray Space
+<div align="center">
 
-**[Project Page](https://raynova-ai.github.io/) | [Paper](https://arxiv.org/abs/2602.20685)**
+# RayNova
+### Scale-Temporal Autoregressive World Modeling in Ray Space
+**CVPR 2026**
+
+[![arXiv](https://img.shields.io/badge/arXiv-2602.20685-b31b1b.svg)](https://arxiv.org/abs/2602.20685)
+[![Project Page](https://img.shields.io/badge/🌐-Project%20Page-blue)](https://raynova-ai.github.io/)
+[![Hugging Face](https://img.shields.io/badge/🤗%20Model-AppliedIntuitionResearch%2FRayNova-yellow)](https://huggingface.co/AppliedIntuitionResearch/RayNova)
+
+</div>
+
+---
 
 World foundation models aim to simulate the evolution of the real world with physically plausible behavior. Unlike prior methods that handle spatial and temporal correlations separately, we propose RAYNOVA, a geometry-agonistic multiview world model for driving scenarios that employs a dual-causal autoregressive framework. It follows both scale-wise and temporal topological orders in the autoregressive process, and leverages global attention for unified 4D spatio-temporal reasoning. Different from existing works that impose strong 3D geometric priors, RAYNOVA constructs an isotropic spatio-temporal representation across views, frames, and scales based on relative Plücker-ray positional encoding, enabling robust generalization to diverse camera setups and ego motions. We further introduce a recurrent training paradigm to alleviate distribution drift in long-horizon video generation.
 
