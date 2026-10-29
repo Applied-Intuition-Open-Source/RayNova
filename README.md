@@ -133,6 +133,39 @@ To align heterogeneous data sources, we adopt a unified coordinate system:
 1. Ego coordinate: x-axis forward, y-axis left-ward, z-axis upward
 2. Camera coordinate: x-axis rightward, y-axis downward, z-axis forward
 
+### Downloading from authorized object storage
+
+`scenarionet_tools/download_nuplan_from_s3.py` requires credentials authorized to
+read both the Chicago scenario dataset and the Phoenix image bucket. It uses
+boto3's standard credential provider chain; no credentials are bundled with the
+code.
+
+- **Shared profile:** provision your authorized credentials in the AWS shared
+  credentials/config files (normally `~/.aws/credentials` and `~/.aws/config`)
+  using your organization's approved process, then select the profile with
+  `AWS_PROFILE`. `AWS_SHARED_CREDENTIALS_FILE` and `AWS_CONFIG_FILE` can select
+  alternate file locations.
+- **Environment:** securely inject `AWS_ACCESS_KEY_ID` and
+  `AWS_SECRET_ACCESS_KEY`, plus `AWS_SESSION_TOKEN` for temporary credentials.
+  Do not put credential values in source files, command-line arguments, or
+  shell history. Environment credentials take precedence over a selected
+  shared profile.
+- **Roles:** use a configured assume-role profile or supported workload role
+  provider through boto3's normal credential chain.
+
+For an already provisioned shared profile named `authorized-data-reader`:
+
+```bash
+AWS_PROFILE=authorized-data-reader python scenarionet_tools/download_nuplan_from_s3.py \
+    --local_dir ./nuplan_download --images_dir ./nuplan_download/sensor_blobs
+```
+
+Each download invocation resolves one credential snapshot, including any session
+token, and passes it to both Lance scenario reads (Chicago) and boto3 image reads
+(Phoenix). The downloader does not change credential or region environment
+variables. Missing credentials produce a configuration error; temporary
+credentials must remain valid for the download, or be renewed before rerunning.
+
 ---
 
 ## Training

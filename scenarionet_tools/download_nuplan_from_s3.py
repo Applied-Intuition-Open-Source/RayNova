@@ -14,29 +14,19 @@
 
 import lance
 import pathlib
-import os
 import pickle
 import argparse
 import boto3
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ── Scenario lance dataset (Chicago) ─────────────────────────────────────────
-os.environ['AWS_ACCESS_KEY_ID'] = '***REMOVED***'
-os.environ['AWS_SECRET_ACCESS_KEY'] = '***REMOVED***'
-os.environ['AWS_ENDPOINT_URL'] = 'https://idskhu5vqvtl.compat.objectstorage.us-chicago-1.oraclecloud.com'
-os.environ['AWS_DEFAULT_REGION'] = 'us-chicago-1'
-
 SCENARIO_STORAGE_OPTIONS = {
     "aws_region": "us-chicago-1",
     "aws_endpoint": "https://idskhu5vqvtl.compat.objectstorage.us-chicago-1.oraclecloud.com",
-    "aws_access_key_id": os.environ['AWS_ACCESS_KEY_ID'],
-    "aws_secret_access_key": os.environ['AWS_SECRET_ACCESS_KEY'],
     "timeout": "300s",
 }
 
 # ── Image blobs (Phoenix, research-datasets) ──────────────────────────────────
-_IMAGE_ACCESS_KEY = '***REMOVED***'
-_IMAGE_SECRET_KEY = '***REMOVED***'
 _IMAGE_ENDPOINT   = 'https://idskhu5vqvtl.compat.objectstorage.us-phoenix-1.oraclecloud.com'
 _IMAGE_REGION     = 'us-phoenix-1'
 
@@ -53,10 +43,11 @@ def _write_pkl(path: pathlib.Path, obj) -> None:
         pickle.dump(obj, f)
 
 
-def _make_image_s3_client():
+def _make_image_s3_client(credentials):
     session = boto3.Session(
-        aws_access_key_id=_IMAGE_ACCESS_KEY,
-        aws_secret_access_key=_IMAGE_SECRET_KEY,
+        aws_access_key_id=credentials.access_key,
+        aws_secret_access_key=credentials.secret_key,
+        aws_session_token=credentials.token,
         region_name=_IMAGE_REGION,
     )
     return session.client("s3", endpoint_url=_IMAGE_ENDPOINT)
@@ -152,18 +143,33 @@ def download(
     scenarios_per_subdir: int = 1,
     image_workers: int = 32,
 ) -> None:
+    credentials = boto3.Session().get_credentials()
+    if credentials is None:
+        raise RuntimeError(
+            "No AWS-compatible credentials found. Configure an authorized shared "
+            "profile, environment credentials, or role credentials before downloading."
+        )
+    credentials = credentials.get_frozen_credentials()
+    storage_options = {
+        **SCENARIO_STORAGE_OPTIONS,
+        "aws_access_key_id": credentials.access_key,
+        "aws_secret_access_key": credentials.secret_key,
+    }
+    if credentials.token:
+        storage_options["aws_session_token"] = credentials.token
+
     local_dir.mkdir(parents=True, exist_ok=True)
     images_dir.mkdir(parents=True, exist_ok=True)
     subdir_prefix = local_dir.name
 
     print(f"Opening dataset: {source}")
-    ds = lance.dataset(source, storage_options=SCENARIO_STORAGE_OPTIONS)
+    ds = lance.dataset(source, storage_options=storage_options)
     total = ds.count_rows()
     limit = num_scenarios if num_scenarios is not None else total
     print(f"Total rows in dataset: {total}, downloading up to: {limit}")
     print(f"Images will be saved to: {images_dir}")
 
-    s3_client = _make_image_s3_client()
+    s3_client = _make_image_s3_client(credentials)
 
     root_mapping: dict[str, str] = {}
     root_summary: dict[str, dict] = {}
